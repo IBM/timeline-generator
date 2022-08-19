@@ -12,9 +12,10 @@ def get_timeline(milestones, spans, start, end,
     fig, ax = plt.subplots(figsize=(14, 5), dpi=300)
 
     # create the milestones (vertical lines and markers)
-    ax.vlines(milestones.datetime, 0, milestones.height,
+    milestones['start_datetime'] = pd.to_datetime(milestones.date)
+    ax.vlines(milestones.start_datetime, 0, milestones.height,
               color="darkblue", linewidth=0.5)
-    ax.plot(milestones.datetime, milestones.height, "o",
+    ax.plot(milestones.start_datetime, milestones.height, "o",
             color="darkblue", markerfacecolor="w")  
     annotate(ax, milestones, milestone_options)
 
@@ -41,9 +42,6 @@ def get_timeline(milestones, spans, start, end,
         plt.savefig(filename, bbox_inches='tight')
 
 def annotate(ax, data, data_options):
-    if 'start_datetime' not in data.columns:
-        data['start_datetime'] = pd.to_datetime(data.date)
-
     for i in data.index:
         data_hash = {}
         for option in data_options:
