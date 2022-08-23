@@ -84,7 +84,6 @@ def annotate(ax, row):
         anchor = mdates.num2date(ax.get_xlim()[0])
     elif row['annotation_anchor'] == 'end':
         anchor = mdates.num2date(ax.get_xlim()[1])
-    print('arrowprops=',row.arrowprops)
     ax.annotate(description, xy=(anchor, row.height),
                 xytext=(row.x_offset, row.y_offset
                         ), textcoords="offset points",
