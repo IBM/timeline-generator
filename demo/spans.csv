@@ -1,4 +1,0 @@
-start,end,height,color,alpha,description
-2022-06-09 09:00,2022-06-15,7,lightblue,0.5,Reconfiguring CDC into multiple instances
-2022-06-15,2022-07-05,8,lightblue,0.5,Collaboration in #dsw-replication-status Slack channel
-2022-06-16 05:00,2022-06-16 09:00,9,red,1,4-hour DSW ODS outage

@@ -3,37 +3,49 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import textwrap
 
-def get_timeline(milestones, spans, start, end, 
-                 milestone_options=[], span_options=[], interval=24, filename=None):
 
-    start_datetime = pd.to_datetime(start)
-    end_datetime = pd.to_datetime(end)
+def get_timeline(data, start=None, end=None,
+                 interval=24, dateformat='%a %b %d', filename=None):
+
+    data['start_datetime'] = pd.to_datetime(data.start)
+    data['end_datetime'] = pd.to_datetime(data.end)
+
+    if not start:
+        start_datetime = min(data.start_datetime) - \
+            pd.DateOffset(hours=interval)
+    else:
+        start_datetime = pd.to_datetime(start)
+    if not end:
+        end_datetime = max(max(data.start_datetime), max(
+            data.end_datetime)) + pd.DateOffset(hours=interval)
+    else:
+        end_datetime = pd.to_datetime(end)
 
     fig, ax = plt.subplots(figsize=(14, 5), dpi=300)
+    ax.set_xlim([start_datetime, end_datetime])
 
-    # create the milestones (vertical lines and markers)
-    milestones['start_datetime'] = pd.to_datetime(milestones.date)
-    ax.vlines(milestones.start_datetime, 0, milestones.height,
-              color="darkblue", linewidth=0.5)
-    ax.plot(milestones.start_datetime, milestones.height, "o",
-            color="darkblue", markerfacecolor="w")  
-    annotate(ax, milestones, milestone_options)
+    data['options'] = data.apply(lambda row: set_defaults(row.options), axis=1)
+    data_options = pd.DataFrame([x for x in data.options])
+    data = data.combine_first(data_options)
 
-    # create the spans (horizontal bars)
-    spans['start_datetime'] = pd.to_datetime(spans.start)
-    spans['end_datetime'] = pd.to_datetime(spans.end)
-
+    spans = data[data.end_datetime.notnull()]
     ax.hlines(spans.height, spans.start_datetime, spans.end_datetime,
-              linewidth=20, capstyle='round', alpha=spans.alpha, color=spans.color)
-    annotate(ax, spans, span_options)
+              linewidth=spans.linewidth, capstyle='round', alpha=spans.alpha,
+              color=spans.color)
+    milestones = data[data.end_datetime.isnull()]
+    vlines = milestones[milestones.vline == True]
+    ax.plot(milestones.start_datetime, milestones.height, "o",
+            color='darkblue', markerfacecolor="darkblue")
+    ax.vlines(vlines.start_datetime, 0, vlines.height,
+              color=vlines.color, linewidth=0.5)
+    data.apply(lambda row: annotate(ax,row), axis=1)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_position('zero')
-    ax.set_xlim([start_datetime, end_datetime])
     ax.get_yaxis().set_ticks([])
-    dtFmt = mdates.DateFormatter('%a %b %d')  # define the formatting
+    dtFmt = mdates.DateFormatter(dateformat)  # define the formatting
     ax.xaxis.set_major_formatter(dtFmt)
     ax.xaxis.set_major_locator(mdates.HourLocator(interval=interval))
     ax.tick_params(axis="x", labelsize=8)
@@ -41,28 +53,39 @@ def get_timeline(milestones, spans, start, end,
     if (filename):
         plt.savefig(filename, bbox_inches='tight')
 
-def annotate(ax, data, data_options):
-    for i in data.index:
-        data_hash = {}
-        for option in data_options:
-            data_hash[option['index']] = option
-        override_options = data_hash.get(i, {})
-        options = {
-            'line_width': 300.,
-            'x_offset': 10,
-            'y_offset': 0,
-            'arrowprops': None,
-            'annotation_point': 'start_datetime',
-            'horizontalalignment': 'left'
-        }
-        for option in override_options:
-            options[option] = override_options[option]
-        d = data.loc[i, options['annotation_point']]
-        height = data.loc[i, 'height']
-        description = "\n".join(textwrap.wrap(
-            data.loc[i, 'description'], width=options['line_width']))
-        ax.annotate(description, xy=(d, height),
-                    xytext=( options['x_offset'], options['y_offset']), textcoords="offset points",
-            horizontalalignment=options['horizontalalignment'],
-            verticalalignment="center",
-            arrowprops=options['arrowprops'])
+def set_defaults(options):
+    defaults = {
+        'text_wrap': 50,
+        'x_offset': 10,
+        'y_offset': 5,
+        'arrowprops': None,
+        'annotation_anchor': 'left',
+        'horizontalalignment': 'left',
+        'color': 'darkblue',
+        'alpha': 1,
+        'linewidth':20,
+        'vline': True
+    }     
+    result = defaults
+    for option in options:
+        result[option] = options[option]
+    return result
+
+
+def annotate(ax, row):
+    description = "\n".join(textwrap.wrap(
+        row.description, width=row['text_wrap']))
+    if row['annotation_anchor'] == 'left':
+        anchor = row['start_datetime']
+    elif row['annotation_anchor'] == 'right':
+        anchor = row['end_datetime']
+    elif row['annotation_anchor'] == 'start':
+        anchor = mdates.num2date(ax.get_xlim()[0])
+    elif row['annotation_anchor'] == 'end':
+        anchor = mdates.num2date(ax.get_xlim()[1])
+    ax.annotate(description, xy=(anchor, row.height),
+                xytext=(row.x_offset, row.y_offset
+                        ), textcoords="offset points",
+                horizontalalignment=row.horizontalalignment,
+                verticalalignment="top",
+                arrowprops=row.arrowprops)
