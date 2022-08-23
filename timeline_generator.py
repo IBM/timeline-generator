@@ -35,7 +35,8 @@ def get_timeline(data, start=None, end=None,
                   color=spans.color)
     milestones = data[data.end_datetime.isnull()]
     vlines = milestones[milestones.vline == True]
-    ax.plot(milestones.start_datetime, milestones.height, "o",
+    plots = milestones[milestones.marker == True]
+    ax.plot(plots.start_datetime, plots.height, "o",
             color='darkblue', markerfacecolor="darkblue")
     ax.vlines(vlines.start_datetime, 0, vlines.height,
               color=vlines.color, linewidth=0.5)
@@ -53,6 +54,7 @@ def get_timeline(data, start=None, end=None,
     fig.autofmt_xdate()
     if (filename):
         plt.savefig(filename, bbox_inches='tight')
+    return ax
 
 def set_defaults(options):
     defaults = {
@@ -65,7 +67,8 @@ def set_defaults(options):
         'color': 'darkblue',
         'alpha': 1,
         'linewidth': 20,
-        'vline': True
+        'vline': True,
+        'marker': True
     }
     result = defaults
     for option in options:
