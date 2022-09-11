@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 import textwrap
 
 def get_timeline(data, start=None, end=None,
-                 interval=24, dateformat='%a %b %d', filename=None):
+                 interval=24, ylim=None, dateformat='%a %b %d', filename=None):
 
     data['start_datetime'] = pd.to_datetime(data.start)
     data['end_datetime'] = pd.to_datetime(data.end)
@@ -22,6 +22,12 @@ def get_timeline(data, start=None, end=None,
 
     fig, ax = plt.subplots(figsize=(14, 5), dpi=300)
     ax.set_xlim([start_datetime, end_datetime])
+    if not ylim:
+        ax.set_ylim(0,1+data[
+            (data.start_datetime > start_datetime) & (data.start_datetime < end_datetime)
+            ].height.max())
+    else:
+        ax.set_ylim(0,ylim)
 
     data['options'] = data.apply(lambda row: set_defaults(row.options), axis=1)
     data_options = pd.DataFrame([x for x in data.options])
@@ -68,7 +74,8 @@ def set_defaults(options):
         'alpha': 1,
         'linewidth': 20,
         'vline': True,
-        'marker': True
+        'marker': True,
+        'placement':'right'
     }
     result = defaults
     for option in options:
@@ -87,6 +94,9 @@ def annotate(ax, row):
         anchor = mdates.num2date(ax.get_xlim()[0])
     elif row['annotation_anchor'] == 'end':
         anchor = mdates.num2date(ax.get_xlim()[1])
+    if row['placement'] == 'left':
+        row['horizontalalignment'] = 'right'
+        row['x_offset'] = -10
     ax.annotate(description, xy=(anchor, row.height),
                 xytext=(row.x_offset, row.y_offset
                         ), textcoords="offset points",
