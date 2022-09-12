@@ -24,7 +24,8 @@ def get_timeline(data, start=None, end=None,
     ax.set_xlim([start_datetime, end_datetime])
     if not ylim:
         ax.set_ylim(0,1+data[
-            (data.start_datetime > start_datetime) & (data.start_datetime < end_datetime)
+            ((data.start_datetime >= start_datetime) & (data.start_datetime <= end_datetime)) | 
+            (pd.notnull(data.end_datetime) & (data.end_datetime >= start_datetime) & (data.end_datetime <= end_datetime))
             ].height.max())
     else:
         ax.set_ylim(0,ylim)
