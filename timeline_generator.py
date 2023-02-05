@@ -4,19 +4,21 @@ import matplotlib.dates as mdates
 import textwrap
 
 def get_timeline(data, start=None, end=None,
-                 interval=24, ylim=None, dateformat='%a %b %d', filename=None):
+                 granularity='hours', interval=24, ylim=None, dateformat='%a %b %d', filename=None):
 
     data['start_datetime'] = pd.to_datetime(data.start)
     data['end_datetime'] = pd.to_datetime(data.end)
 
+    offset_args = {}
+    offset_args[granularity] = interval
     if not start:
         start_datetime = min(data.start_datetime) - \
-            pd.DateOffset(hours=interval)
+            pd.DateOffset(**offset_args)
     else:
         start_datetime = pd.to_datetime(start)
     if not end:
         end_datetime = max(max(data.start_datetime), max(
-            data.end_datetime)) + pd.DateOffset(hours=interval)
+            data.end_datetime)) + pd.DateOffset(**offset_args)
     else:
         end_datetime = pd.to_datetime(end)
 
@@ -56,7 +58,14 @@ def get_timeline(data, start=None, end=None,
     ax.get_yaxis().set_ticks([])
     dtFmt = mdates.DateFormatter(dateformat)  # define the formatting
     ax.xaxis.set_major_formatter(dtFmt)
-    ax.xaxis.set_major_locator(mdates.HourLocator(interval=interval))
+    if granularity == 'hours':
+        ax.xaxis.set_major_locator(mdates.HourLocator(interval=interval))
+    elif granularity == 'weeks':
+        ax.xaxis.set_major_locator(mdates.WeekLocator(interval=interval)) 
+    elif granularity == 'months':
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval)) 
+    else:
+        print("invalid granularity")
     ax.tick_params(axis="x", labelsize=8)
     fig.autofmt_xdate()
     if (filename):
