@@ -4,7 +4,7 @@ import matplotlib.dates as mdates
 import textwrap
 
 def get_timeline(data, start=None, end=None,
-                 granularity='hours', interval=24, ylim=None, dateformat='%a %b %d', filename=None):
+                 granularity='hours', interval=24, ylim=None, dateformat='%a %b %d', fig_height=5, fig_width=14, filename=None):
 
     data['start_datetime'] = pd.to_datetime(data.start)
     data['end_datetime'] = pd.to_datetime(data.end)
@@ -22,7 +22,7 @@ def get_timeline(data, start=None, end=None,
     else:
         end_datetime = pd.to_datetime(end)
 
-    fig, ax = plt.subplots(figsize=(14, 5), dpi=300)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height), dpi=300)
     ax.set_xlim([start_datetime, end_datetime])
     if not ylim:
         ax.set_ylim(0,1+data[
@@ -82,6 +82,7 @@ def set_defaults(options):
         'annotation_anchor': 'left',
         'horizontalalignment': 'left',
         'color': 'darkblue',
+        'textcolor': 'black',
         'alpha': 1,
         'linewidth': 20,
         'vline': True,
@@ -114,4 +115,5 @@ def annotate(ax, row):
                         ), textcoords="offset points",
                 horizontalalignment=row.horizontalalignment,
                 verticalalignment="top",
+                color=row.textcolor,
                 arrowprops=row.arrowprops)
