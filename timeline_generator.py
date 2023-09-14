@@ -6,8 +6,8 @@ import textwrap
 def get_timeline(data, start=None, end=None,
                  granularity='hours', interval=24, ylim=None, dateformat='%a %b %d', fig_height=5, fig_width=14, filename=None):
 
-    data['start_datetime'] = pd.to_datetime(data.start)
-    data['end_datetime'] = pd.to_datetime(data.end)
+    data['start_datetime'] = pd.to_datetime(data.start, format='mixed')
+    data['end_datetime'] = pd.to_datetime(data.end, format='mixed')
 
     offset_args = {}
     offset_args[granularity] = interval
@@ -59,7 +59,9 @@ def get_timeline(data, start=None, end=None,
     ax.get_yaxis().set_ticks([])
     dtFmt = mdates.DateFormatter(dateformat)  # define the formatting
     ax.xaxis.set_major_formatter(dtFmt)
-    if granularity == 'hours':
+    if granularity == 'minutes':
+        ax.xaxis.set_major_locator(mdates.MinuteLocator(interval=interval))
+    elif granularity == 'hours':
         ax.xaxis.set_major_locator(mdates.HourLocator(interval=interval))
     elif granularity == 'weeks':
         ax.xaxis.set_major_locator(mdates.WeekLocator(interval=interval)) 
@@ -110,10 +112,14 @@ def annotate(ax, row):
     if row['placement'] == 'left':
         row['horizontalalignment'] = 'right'
         row['x_offset'] = -10
-    ax.annotate(description, xy=(anchor, row.height),
-                xytext=(row.x_offset, row.y_offset
-                        ), textcoords="offset points",
-                horizontalalignment=row.horizontalalignment,
-                verticalalignment="top",
-                color=row.textcolor,
-                arrowprops=row.arrowprops)
+    if pd.isna(row['arrowprops']):
+        row['arrowprops'] = None
+    ax.annotate(
+        description, xy=(anchor, row.height),
+        xytext=(row.x_offset, row.y_offset), 
+        textcoords="offset points",
+        horizontalalignment=row.horizontalalignment,
+        verticalalignment="top",
+        color=row.textcolor,
+        arrowprops=row.arrowprops
+    )
